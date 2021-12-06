@@ -32,24 +32,24 @@
 
 (defmacro walk-head (&rest body)
   `(when (looking-at "^diff")
-       (progn
+     (progn
+       ,@body
+       (forward-line) ;; skip over "diff" line
+       (while (and (not (eobp)) (not (looking-at "^diff\\|^@@")))
          ,@body
-         (forward-line) ;; skip over "diff" line
-         (while (and (not (eobp)) (not (looking-at "^diff\\|^@@")))
-           ,@body
-           (forward-line))
-         (if (not (eobp))
-             (goto-char (match-beginning 0))
-           (goto-char (point-max))))))
+         (forward-line))
+       (if (not (eobp))
+           (goto-char (match-beginning 0))
+         (goto-char (point-max))))))
 
 (defmacro walk-hunk (&rest body)
   `(when (looking-at "^@@\s-\\([0-9]+\\)\,[0-9]+\s\\+\\([0-9]+\\)\,[0-9]+\s@@.*")
+     (cond ,@body)
+     (forward-line)
+     (while (and (not (looking-at "^@@.*")) (not (eobp)))
        (cond ,@body)
-       (forward-line)
-       (while (and (not (looking-at "^@@.*")) (not (eobp)))
-         (cond ,@body)
-         (forward-line))
-       (looking-at "^@@.*")))
+       (forward-line))
+     (looking-at "^@@.*")))
 
 (defun git-overlay-remove (&optional beg end length)
   (interactive)
